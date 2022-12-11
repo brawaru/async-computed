@@ -165,7 +165,7 @@ export type AsyncComputedRef<R = any> = Readonly<
  *   synchronously maps values for other reactive references, which then passed
  *   to the getter method.
  */
-export function asyncComputed<S, R = any>(
+export function asyncComputed<R, S>(
   getterOrOptions:
     | AsyncComputedGetter<R>
     | AsyncComputedOptions<R, S>
