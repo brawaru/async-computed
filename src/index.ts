@@ -14,7 +14,7 @@ export enum State {
   Resolved = 'resolved',
 
   /** The promise has encountered an error. */
-  Rejected = 'error',
+  Rejected = 'rejected',
 }
 
 /**
@@ -250,6 +250,8 @@ export function asyncComputed<S, R = any>(
               value,
               error: undefined,
             } as unknown)
+
+            console.log('resolved', state)
           }
         })
         .catch((error) => {
@@ -259,6 +261,8 @@ export function asyncComputed<S, R = any>(
               value: undefined,
               error,
             } as unknown)
+
+            console.log('rejected', state)
           }
         })
     },
