@@ -250,8 +250,6 @@ export function asyncComputed<R, S>(
               value,
               error: undefined,
             } as unknown)
-
-            console.log('resolved', state)
           }
         })
         .catch((error) => {
@@ -261,8 +259,6 @@ export function asyncComputed<R, S>(
               value: undefined,
               error,
             } as unknown)
-
-            console.log('rejected', state)
           }
         })
     },
