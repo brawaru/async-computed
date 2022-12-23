@@ -9,6 +9,8 @@
     "importsNotUsedAsValues": "error",
     "baseUrl": ".",
     "noEmit": true,
+    "isolatedModules": true,
+    "skipLibCheck": true,
     "types": ["vitest/importMeta"]
   },
   "include": ["src"]
