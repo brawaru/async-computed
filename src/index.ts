@@ -266,6 +266,7 @@ export function asyncComputed<R, S = any>(
     },
     {
       immediate: true,
+      flush: 'sync',
     },
   )
 
