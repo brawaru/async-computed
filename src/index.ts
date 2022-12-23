@@ -47,9 +47,11 @@ export interface AsyncComputedOptions<R, S> {
    *
    * Use watch method whenever references are not accessed before the first
    * asynchorous operation in the getter method, otherwise Vue won't be able to
-   * subscribe the getter for updates. You can refactor your getter to access
-   * the reactive references before any asynchorous operation, but in most cases
-   * it makes code less clear.
+   * subscribe the getter for updates.
+   *
+   * Alternatively, you can refactor your getter function to access the reactive
+   * references before any asynchorous operations, but in most cases such
+   * hoisting makes code look less clear.
    */
   watch?(): S
 
