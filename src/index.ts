@@ -69,7 +69,9 @@ export interface AsyncComputedOptions<R, S> {
  * @template R The resolved value of the promise that later becomes accessible
  *   through {@link ResolvedStateObject.value} property.
  */
-export type AsyncComputedGetter<R> = (this: AsyncGetterThis) => R | Promise<R>
+export type AsyncComputedGetter<R> = (
+  this: AsyncGetterThis,
+) => R | PromiseLike<R>
 
 /** Represent a base state object which should be used by extending interfaces. */
 export interface StateObjectBase<R> {
