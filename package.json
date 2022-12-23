@@ -24,7 +24,7 @@
   "scripts": {
     "build": "tsc --noEmit && unbuild",
     "dev": "vitest dev",
-    "prepack": "tsc --noEmit && unbuild",
+    "prepack": "tsc --noEmit && unbuild && pnpm run test",
     "test": "vitest run",
     "release": "semantic-release"
   },
