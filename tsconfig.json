@@ -8,7 +8,8 @@
     "strictBindCallApply": true,
     "importsNotUsedAsValues": "error",
     "baseUrl": ".",
-    "noEmit": true
+    "noEmit": true,
+    "types": ["vitest/importMeta"]
   },
   "include": ["src"]
 }
