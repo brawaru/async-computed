@@ -81,6 +81,10 @@ export interface StateObjectBase<R> {
   /** The original promise. */
   promise: Promise<R>
 
+  value: unknown
+
+  error: unknown
+
   /** @returns Whether the promise has not been resolved yet. */
   get isPending(): this['state'] extends State.Pending ? true : false
 
@@ -97,6 +101,10 @@ export interface StateObjectBase<R> {
 /** Represents a state object for yet unresolved promise. */
 export interface PendingStateObject<R> extends StateObjectBase<R> {
   state: State.Pending
+
+  value: undefined
+
+  error: undefined
 }
 
 /** Represents a state oject for the resolved promise. */
@@ -105,11 +113,17 @@ export interface ResolvedStateObject<R> extends StateObjectBase<R> {
 
   /** Resolved value of the promise. */
   value: R
+
+  /** Rejection reason. */
+  error: undefined
 }
 
 /** Represents a state object for the rejected promise. */
 export interface RejectedStateObject<R> extends StateObjectBase<R> {
   state: State.Rejected
+
+  /** Resolved value of the promise. */
+  value: undefined
 
   /** Rejection reason. */
   error: unknown
@@ -123,6 +137,46 @@ export type StateObject<R> =
 export type AsyncComputedRef<R = any> = Readonly<
   ShallowReactive<StateObject<R>>
 >
+
+type Result<T> =
+  | {
+      result: 'complete'
+      value: T
+    }
+  | {
+      result: 'throw'
+      error: unknown
+    }
+
+function invoke<T>(func: () => T): Result<T> {
+  try {
+    return {
+      result: 'complete',
+      value: func(),
+    }
+  } catch (error) {
+    return {
+      result: 'throw',
+      error,
+    }
+  }
+}
+
+/**
+ * Checks whether the provided value is an instance of Thenable.
+ *
+ * Thenables are regular objects containing.
+ *
+ * @param value Value to check.
+ * @returns `true` if value is thenable.
+ */
+function isThenable(value: unknown): value is PromiseLike<unknown> {
+  return (
+    typeof value === 'object' &&
+    value !== null &&
+    typeof (value as Record<PropertyKey, any>).then === 'function'
+  )
+}
 
 /**
  * {@link asyncComputed} takes in an asyncronous getter function or an object
@@ -182,10 +236,6 @@ export function asyncComputed<R, S = any>(
   getterOrOptions: AsyncComputedGetter<R> | AsyncComputedOptions<R, S>,
 ): AsyncComputedRef<R> {
   const state = shallowReactive<StateObject<R>>({
-    state: State.Pending,
-    value: undefined,
-    error: undefined,
-    promise: undefined as unknown as Promise<R>,
     get isPending() {
       return (this.state as State) === State.Pending
     },
@@ -196,6 +246,33 @@ export function asyncComputed<R, S = any>(
       return (this.state as State) === State.Rejected
     },
   } as StateObject<R>)
+
+  function setPending(promise: Promise<R>) {
+    Object.assign(state, {
+      state: State.Pending as const,
+      value: undefined,
+      error: undefined,
+      promise,
+    }) satisfies StateObject<R> & PendingStateObject<R>
+  }
+
+  function setResolved<R>(promise: Promise<R>, value: R) {
+    Object.assign(state, {
+      state: State.Resolved as const,
+      value,
+      error: undefined,
+      promise,
+    }) satisfies StateObject<R> & ResolvedStateObject<R>
+  }
+
+  function setError(promise: Promise<R>, error: unknown) {
+    Object.assign(state, {
+      state: State.Rejected as const,
+      value: undefined,
+      error,
+      promise,
+    }) satisfies StateObject<R> & RejectedStateObject<R>
+  }
 
   const source = computed<S>(() => {
     if (
@@ -214,17 +291,11 @@ export function asyncComputed<R, S = any>(
       signal: abortController.signal,
     }
 
-    if (typeof getterOrOptions === 'function') {
-      return {
-        promise: Promise.resolve(getterOrOptions.call(thisValue)),
-        abortController,
-      }
-    }
-
     return {
-      promise: Promise.resolve(
-        getterOrOptions.get.call(thisValue, source.value!),
-      ),
+      invokation:
+        typeof getterOrOptions === 'function'
+          ? invoke(getterOrOptions.bind(thisValue))
+          : invoke(getterOrOptions.get.bind(thisValue, source.value)),
       abortController,
     }
   })
@@ -235,36 +306,33 @@ export function asyncComputed<R, S = any>(
       previousInvokation?.abortController.abort()
 
       const {
-        promise,
+        invokation,
         abortController: { signal },
       } = activeInvokation
 
-      Object.assign(state, {
-        state: State.Pending,
-        value: undefined,
-        error: undefined,
-        promise,
-      } as unknown)
+      if (invokation.result === 'throw') {
+        setError(Promise.reject(invokation.error), invokation.error)
+        return
+      }
 
-      promise
-        .then((value) => {
-          if (!signal.aborted) {
-            Object.assign(state, {
-              state: State.Resolved,
-              value,
-              error: undefined,
-            } as unknown)
-          }
-        })
-        .catch((error) => {
-          if (!signal.aborted) {
-            Object.assign(state, {
-              state: State.Rejected,
-              value: undefined,
-              error,
-            } as unknown)
-          }
-        })
+      if (isThenable(invokation.value)) {
+        const handledPromise = Promise.resolve(invokation.value).then(
+          (value) => {
+            if (!signal.aborted) setResolved(handledPromise, value)
+
+            return value
+          },
+          (error) => {
+            if (!signal.aborted) setError(handledPromise, error)
+
+            throw error
+          },
+        )
+
+        setPending(handledPromise)
+      } else {
+        setResolved(Promise.resolve(invokation.value), invokation.value)
+      }
     },
     {
       immediate: true,
