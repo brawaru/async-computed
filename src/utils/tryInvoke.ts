@@ -36,3 +36,30 @@ export function tryInvoke<T>(func: () => T): InvokeResult<T> {
   }
 }
 
+if (import.meta.vitest) {
+  const { describe, it, expect, vi } = import.meta.vitest
+
+  describe('tryInvoke', () => {
+    it('handles returns', () => {
+      const fc = () => {
+        return true
+      }
+
+      expect(tryInvoke(fc)).toMatchObject({
+        ok: true,
+        value: true,
+      })
+    })
+
+    it('handles throw', () => {
+      const fc = vi.fn(() => {
+        throw new Error()
+      })
+
+      expect(tryInvoke(fc)).toMatchObject({
+        ok: false,
+        value: fc.mock.results.at(-1)?.value,
+      })
+    })
+  })
+}

@@ -15,3 +15,16 @@ export function isFunction<T = unknown>(
   return typeof value === 'function'
 }
 
+if (import.meta.vitest) {
+  const { describe, it, expect } = import.meta.vitest
+
+  describe('isFunction', () => {
+    it('true for functions', () => {
+      expect(isFunction(() => {})).toBe(true)
+    })
+
+    it('false for non-functions', () => {
+      expect(isFunction(null)).toBe(false)
+    })
+  })
+}
