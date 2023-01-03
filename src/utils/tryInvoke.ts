@@ -7,13 +7,13 @@ export type InvokeResult<T> =
   | {
       /** Whether the invocation has completed without errors. */
       ok: true
-      /** Returned by the function value. */
+      /** Return value of the function call. */
       value: T
     }
   | {
       /** Whether the invocation has completed without errors. */
       ok: false
-      /** Thrown by the function error. */
+      /** Error thrown during the function call. */
       value: unknown
     }
 
