@@ -1,4 +1,4 @@
-import { describe, expect, it } from 'vitest'
+import { describe, expect, it, Mock, vi } from 'vitest'
 import { ref } from 'vue'
 import {
   asyncComputed,
@@ -219,17 +219,32 @@ describe('asyncComputed', () => {
     expect(($multiplication as FulfilledState<number>).value).toBe(64)
   })
 
-  it('abort previous controllers', () => {
+  it('previous invocations cancelled', async () => {
     const $tick = ref(0)
 
-    const signals: AbortSignal[] = []
+    const contexts: {
+      callback: Mock<[], void>
+      get canceled(): boolean
+    }[] = []
 
     const options: AsyncComputedOptions<void, { tick: number }> = {
       watch() {
         return { tick: $tick.value }
       },
       async get() {
-        signals.push(this.signal)
+        const callback = vi.fn(() => {})
+
+        this.onCancel(callback)
+
+        const that = this
+
+        contexts.push({
+          callback,
+          get canceled() {
+            return that.canceled
+          },
+        })
+
         await Promise.resolve()
       },
     }
@@ -242,8 +257,20 @@ describe('asyncComputed', () => {
       $tick.value++
     }
 
-    expect(signals).toHaveLength(10)
-    expect(signals.at(-1)?.aborted).toBe(false)
-    expect(signals.slice(0, -1).every((signal) => signal.aborted)).toBe(true)
+    await $isCancelled.promise
+
+    expect(contexts).toHaveLength(10)
+
+    for (let i = 0, l = contexts.length - 1; i <= l; i++) {
+      const context = contexts[i]
+
+      if (i === l) {
+        expect(context.canceled).toBe(false)
+        expect(context.callback).not.toBeCalled()
+      } else {
+        expect(context.canceled).toBe(true)
+        expect(context.callback).toHaveBeenCalledOnce()
+      }
+    }
   })
 })
