@@ -280,7 +280,6 @@ export function asyncComputed<R, S = any>(
         canceled = true
       },
       done() {
-        canceled = true
         cancelCallbacks = undefined
       },
     }
