@@ -1,12 +1,28 @@
 {
   "name": "@braw/async-computed",
   "version": "0.0.0",
-  "description": "Provides a function to compute value asynchronously via Vue Composition API",
-  "license": "MIT",
+  "description": "Compute values asynchronously with the Vue Composition API",
+  "keywords": [
+    "vue2",
+    "vue3",
+    "async",
+    "composable"
+  ],
+  "homepage": "https://github.com/Brawaru/async-computed",
+  "bugs": {
+    "url": "https://github.com/brawaru/async-computed/issues"
+  },
   "author": {
-    "name": "Brawaru",
+    "name": "Alexander 'Brawaru' Sorokin",
     "url": "https://github.com/Brawaru"
   },
+  "funding": "https://github.com/Brawaru/Brawaru/blob/main/SUPPORT.md",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/brawaru/async-computed.git"
+  },
+  "license": "MIT",
+  "sideEffects": false,
   "type": "module",
   "exports": {
     ".": {
